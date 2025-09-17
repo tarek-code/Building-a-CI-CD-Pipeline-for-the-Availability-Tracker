@@ -129,6 +129,6 @@ docker build -t $IMAGE_NAME .
 # ==============================
 
 echo "Starting application with Docker Compose..."
-docker-compose up -d --build
+docker-compose up -d
 
 echo "CI script completed successfully!"
