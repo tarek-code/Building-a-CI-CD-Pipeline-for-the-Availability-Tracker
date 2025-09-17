@@ -1,0 +1,92 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    unzip \
+    python3 \
+    python3-pip \
+    software-properties-common \
+    gnupg \
+    sshpass \
+    git \
+    wget \
+    ca-certificates \
+    apt-transport-https \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf awscliv2.zip aws
+
+# Install Terraform (download binary directly)
+RUN curl -fsSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o terraform.zip \
+    && unzip terraform.zip \
+    && mv terraform /usr/local/bin/ \
+    && rm terraform.zip
+
+# Install Ansible (via apt for stability)
+RUN apt-get update && apt-get install -y ansible \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI (download binary)
+RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-25.0.3.tgz -o docker.tgz \
+    && tar xzvf docker.tgz --strip 1 -C /usr/local/bin docker/docker \
+    && rm docker.tgz
+
+# Install Node.js 20 (for CI pipeline)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
+# Install Docker Compose (for CI pipeline)
+RUN curl -L "https://github.com/docker/compose/releases/download/v2.28.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
+
+# Add jenkins user to docker group
+RUN usermod -aG docker jenkins
+
+# Install global npm packages (for CI pipeline)
+RUN npm install -g eslint prettier stylelint htmlhint jest supertest
+
+USER jenkins
+
+# Install Jenkins plugins
+RUN jenkins-plugin-cli --plugins \
+    workflow-aggregator \
+    git \
+    docker-workflow \
+    docker-plugin \
+    blueocean \
+    pipeline-stage-view \
+    build-timeout \
+    credentials-binding \
+    timestamper \
+    ws-cleanup \
+    ant \
+    gradle \
+    workflow-job \
+    ssh-slaves \
+    matrix-auth \
+    pam-auth \
+    ldap \
+    email-ext \
+    mailer \
+    aws-credentials \
+    terraform \
+    ansible
+
+# Set environment variables
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+ENV JENKINS_OPTS="--httpPort=8080"
+
+# Expose ports
+EXPOSE 8080 50000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/login || exit 1

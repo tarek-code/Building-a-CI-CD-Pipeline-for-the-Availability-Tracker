@@ -21,14 +21,11 @@ pipeline {
                 script {
                     echo "Installing Node.js dependencies..."
                     sh '''
-                        # Install Node.js if not present
-                        if ! command -v node &> /dev/null; then
-                            echo "Installing Node.js ${NODE_VERSION}..."
-                            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-                            sudo apt-get install -y nodejs
-                        else
-                            echo "Node.js already installed: $(node --version)"
-                        fi
+                        # Verify tools are available (pre-installed in custom Jenkins image)
+                        echo "Node.js version: $(node --version)"
+                        echo "npm version: $(npm --version)"
+                        echo "Docker version: $(docker --version)"
+                        echo "Docker Compose version: $(docker-compose --version)"
                         
                         # Install npm dependencies
                         if [ ! -d "node_modules" ]; then
@@ -38,13 +35,13 @@ pipeline {
                             echo "Dependencies already installed."
                         fi
                         
-                        # Install global tools if missing
-                        for tool in eslint prettier stylelint htmlhint; do
-                            if ! npm list -g "$tool" >/dev/null 2>&1; then
-                                echo "Installing $tool globally..."
-                                npm install -g "$tool"
+                        # Verify global tools are available
+                        echo "Global tools available:"
+                        for tool in eslint prettier stylelint htmlhint jest supertest; do
+                            if command -v "$tool" >/dev/null 2>&1; then
+                                echo "✓ $tool: $($tool --version 2>/dev/null || echo 'installed')"
                             else
-                                echo "$tool is already installed globally."
+                                echo "✗ $tool: not found"
                             fi
                         done
                         
@@ -135,25 +132,9 @@ pipeline {
                 script {
                     echo "Building Docker image..."
                     sh '''
-                        # Install Docker if not present
-                        if ! command -v docker &> /dev/null; then
-                            echo "Installing Docker..."
-                            curl -fsSL https://get.docker.com -o get-docker.sh
-                            sh get-docker.sh
-                            sudo usermod -aG docker $USER
-                            rm get-docker.sh
-                        else
-                            echo "Docker already installed: $(docker --version)"
-                        fi
-                        
-                        # Install Docker Compose if not present
-                        if ! command -v docker-compose &> /dev/null; then
-                            echo "Installing Docker Compose..."
-                            sudo curl -L "https://github.com/docker/compose/releases/download/v2.28.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                            sudo chmod +x /usr/local/bin/docker-compose
-                        else
-                            echo "Docker Compose already installed: $(docker-compose --version)"
-                        fi
+                        # Verify Docker tools are available (pre-installed in custom Jenkins image)
+                        echo "Docker version: $(docker --version)"
+                        echo "Docker Compose version: $(docker-compose --version)"
                         
                         # Build Docker image
                         docker build -t ${IMAGE_NAME} . || echo "Docker image build failed - continuing with other steps..."
