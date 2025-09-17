@@ -2,10 +2,7 @@ version: "3.9"
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: availability-tracker:latest
+    image: teamavail:latest
     container_name: availability-tracker
     environment:
       - NODE_ENV=production
