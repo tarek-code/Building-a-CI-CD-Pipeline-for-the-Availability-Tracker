@@ -37,12 +37,36 @@ services:
       - ./output:/app/output
     entrypoint: ["sh", "-c"]
     command: >
-      "prev=; while :; do \
+      "mkdir -p /app/output; \
+      sleep 2; \
+      r=\$(redis-cli -h redis -p 6379 GET history); \
+      if [ -n \"$r\" ]; then \
+        printf \"%s\" \"$r\" > /app/output/history.json; \
+      else \
         if [ -f /app/output/history.json ]; then \
-          sum=\$(sha256sum /app/output/history.json | awk '{print $1}'); \
-          if [ \"$sum\" != \"$prev\" ]; then \
-            cat /app/output/history.json | redis-cli -h redis -p 6379 -x SET history; \
-            prev=\"$sum\"; \
+          cat /app/output/history.json | redis-cli -h redis -p 6379 -x SET history >/dev/null; \
+        fi; \
+      fi; \
+      prev_r=\"\$(printf %s \"$r\" | sha256sum | awk '{print $1}')\"; \
+      if [ -f /app/output/history.json ]; then \
+        prev_f=\"\$(sha256sum /app/output/history.json | awk '{print $1}')\"; \
+      else \
+        prev_f=\"\"; \
+      fi; \
+      while :; do \
+        r=\$(redis-cli -h redis -p 6379 GET history); \
+        rh=\"\$(printf %s \"$r\" | sha256sum | awk '{print $1}')\"; \
+        if [ -n \"$r\" ] && [ \"$rh\" != \"$prev_r\" ]; then \
+          printf \"%s\" \"$r\" > /app/output/history.json; \
+          prev_r=\"$rh\"; \
+          prev_f=\"\$(sha256sum /app/output/history.json | awk '{print $1}')\"; \
+        fi; \
+        if [ -f /app/output/history.json ]; then \
+          fh=\"\$(sha256sum /app/output/history.json | awk '{print $1}')\"; \
+          if [ \"$fh\" != \"$prev_f\" ]; then \
+            cat /app/output/history.json | redis-cli -h redis -p 6379 -x SET history >/dev/null; \
+            prev_f=\"$fh\"; \
+            prev_r=\"\$(printf %s \"\$(cat /app/output/history.json)\" | sha256sum | awk '{print $1}')\"; \
           fi; \
         fi; \
         sleep 2; \
