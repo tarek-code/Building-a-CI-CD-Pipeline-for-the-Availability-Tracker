@@ -1,0 +1,93 @@
+/* Basic reset for styling */
+body {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  text-align: center;
+}
+
+/* Right-aligning names in the first column */
+td:first-child, th:first-child {
+  text-align: left;
+}
+
+/* Styling the status dropdown */
+select {
+  width: 100%;
+  padding: 5px;
+  border-radius: 8px;  /* Adding rounded edges to dropdown */
+  border: 1px solid #ccc;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Status colors for dropdown items */
+.status-Empty {
+  background-color: #f0f0f0;
+}
+
+.status-Office {
+  background-color: #007bff;
+  color: white;
+}
+
+.status-Remote {
+  background-color: #28a745;
+  color: white;
+}
+
+.status-Casual {
+  background-color: #ffc107;
+  color: white;
+}
+
+.status-Annual {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-Sick {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.status-Off {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Alternating row background colors */
+.even-row {
+  background-color: #f9f9f9;
+}
+
+.odd-row {
+  background-color: white;
+}
+
+/* Optional: Hover effect on rows */
+tr:hover {
+  background-color: #e9e9e9;
+}
