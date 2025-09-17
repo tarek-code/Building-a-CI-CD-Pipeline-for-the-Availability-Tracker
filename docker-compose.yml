@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: availability-tracker:latest
+    container_name: availability-tracker
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./public:/app/public:ro
+      - ./input:/app/input:ro
+      - ./output:/app/output
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: availability-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+
+  history-sync:
+    image: redis:7-alpine
+    container_name: availability-history-sync
+    depends_on:
+      - app
+      - redis
+    volumes:
+      - ./output:/app/output
+    entrypoint: ["sh", "-c"]
+    command: >
+      "prev=; while :; do \
+        if [ -f /app/output/history.json ]; then \
+          sum=\$(sha256sum /app/output/history.json | awk '{print $1}'); \
+          if [ \"$sum\" != \"$prev\" ]; then \
+            cat /app/output/history.json | redis-cli -h redis -p 6379 -x SET history; \
+            prev=\"$sum\"; \
+          fi; \
+        fi; \
+        sleep 2; \
+      done"
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
