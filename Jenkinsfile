@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = 'teamavail:latest'
         NODE_VERSION = '20'
     }
-    
+     
     stages {
         stage('Checkout') {
             steps {
