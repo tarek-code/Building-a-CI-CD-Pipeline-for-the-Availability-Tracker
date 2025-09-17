@@ -23,5 +23,14 @@ export default defineConfig([
       globals: globals.browser,  // 👈 لو عندك frontend JS
     },
   },
+  {
+    files: ["**/*.test.js", "**/*.spec.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+    },
+  },
 ]);
 
