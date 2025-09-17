@@ -119,7 +119,7 @@ echo "All tests completed."
 # Step 4: Build Docker image
 # ==============================
 
-IMAGE_NAME="teamavail-app:latest"
+IMAGE_NAME="teamavail:latest"
 
 echo "Building Docker image..."
 docker build -t $IMAGE_NAME . || echo "Docker image build failed - continuing with other steps..."
