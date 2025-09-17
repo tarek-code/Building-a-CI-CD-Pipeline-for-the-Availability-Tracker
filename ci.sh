@@ -109,8 +109,8 @@ echo "All code quality checks passed."
 # ==============================
 
 echo "Running Unit and Integration Tests in parallel..."
-npm run test:unit & || echo "Unit tests failed - continuing with other checks..."
-npm run test:integration & || echo "Integration tests failed - continuing with other checks..."
+(npm run test:unit || echo "Unit tests failed - continuing with other checks...") &
+(npm run test:integration || echo "Integration tests failed - continuing with other checks...") &
 wait
 
 echo "All tests completed."
