@@ -47,13 +47,21 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 RUN curl -L "https://github.com/docker/compose/releases/download/v2.28.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Add jenkins user to docker group
-RUN usermod -aG docker jenkins
+# Create docker group and add jenkins user to it
+RUN groupadd docker && usermod -aG docker jenkins
+
+# Switch to jenkins user for npm global installs
+USER jenkins
+
+# Configure npm to use a global directory accessible to jenkins user
+RUN mkdir -p /var/jenkins_home/.npm-global \
+    && npm config set prefix '/var/jenkins_home/.npm-global'
+
+# Add npm global bin to PATH for jenkins user
+ENV PATH="/var/jenkins_home/.npm-global/bin:$PATH"
 
 # Install global npm packages (for CI pipeline)
 RUN npm install -g eslint prettier stylelint htmlhint jest supertest
-
-USER jenkins
 
 # Install Jenkins plugins
 RUN jenkins-plugin-cli --plugins \
