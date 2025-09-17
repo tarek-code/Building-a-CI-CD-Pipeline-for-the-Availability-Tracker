@@ -24,8 +24,8 @@ pipeline {
                         # Install Node.js if not present
                         if ! command -v node &> /dev/null; then
                             echo "Installing Node.js ${NODE_VERSION}..."
-                            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-                            sudo apt-get install -y nodejs
+                            curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x |  -E bash -
+                             apt-get install -y nodejs
                         else
                             echo "Node.js already installed: $(node --version)"
                         fi
@@ -140,7 +140,7 @@ pipeline {
                             echo "Installing Docker..."
                             curl -fsSL https://get.docker.com -o get-docker.sh
                             sh get-docker.sh
-                            sudo usermod -aG docker $USER
+                             usermod -aG docker $USER
                             rm get-docker.sh
                         else
                             echo "Docker already installed: $(docker --version)"
@@ -149,8 +149,8 @@ pipeline {
                         # Install Docker Compose if not present
                         if ! command -v docker-compose &> /dev/null; then
                             echo "Installing Docker Compose..."
-                            sudo curl -L "https://github.com/docker/compose/releases/download/v2.28.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                            sudo chmod +x /usr/local/bin/docker-compose
+                             curl -L "https://github.com/docker/compose/releases/download/v2.28.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                             chmod +x /usr/local/bin/docker-compose
                         else
                             echo "Docker Compose already installed: $(docker-compose --version)"
                         fi
