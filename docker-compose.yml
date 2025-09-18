@@ -10,8 +10,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./input:/app/input:ro
-      - ./output:/app/output
+      - "${WORKSPACE:-${PWD}}/input:/app/input:ro"
+      - "${WORKSPACE:-${PWD}}/output:/app/output"
     depends_on:
       - redis
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./redis_volume:/data
+      - "${WORKSPACE:-${PWD}}/redis_volume:/data"
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
 
@@ -33,7 +33,7 @@ services:
       - app
       - redis
     volumes:
-      - ./output:/app/output
+      - "${WORKSPACE:-${PWD}}/output:/app/output"
     entrypoint: ["sh", "-c"]
     command: >
       "mkdir -p /app/output; \
