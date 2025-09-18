@@ -147,14 +147,25 @@ pipeline {
             steps {
                 script {
                     echo "Starting application with Docker Compose..."
-                    dir("${env.WORKSPACE}/AvailabilityTracker") {
-                        sh 'pwd && ls -la'
-                        // Sanity check mounts exist in the workspace Jenkins is using
-                        sh '[ -d input ] && ls -la input || echo "input/ missing"'
-                        sh '[ -d output ] && ls -la output || echo "output/ missing"'
-                        // Recreate stack to refresh mounts
-                        sh 'docker-compose down -v || true'
-                        sh 'docker-compose up -d'
+                    dir("${env.WORKSPACE}") {
+                        sh '''
+                            set -e
+                            echo "WORKSPACE: $(pwd)"
+                            # Locate docker-compose.yml within workspace (depth 2)
+                            COMPOSE_FILE=$(find . -maxdepth 2 -type f -name docker-compose.yml | head -n1)
+                            if [ -z "$COMPOSE_FILE" ]; then
+                              echo "docker-compose.yml not found in workspace" >&2
+                              exit 1
+                            fi
+                            COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
+                            echo "Using compose in: $COMPOSE_DIR"
+                            cd "$COMPOSE_DIR"
+                            pwd && ls -la
+                            [ -d input ] && ls -la input || echo "input/ missing"
+                            [ -d output ] && ls -la output || echo "output/ missing"
+                            docker-compose down -v || true
+                            docker-compose up -d
+                        '''
                     }
                 }
             }
