@@ -1,3 +1,4 @@
+jest.mock('redis');
 const request = require('supertest');
 const { app } = require('./server');
 
