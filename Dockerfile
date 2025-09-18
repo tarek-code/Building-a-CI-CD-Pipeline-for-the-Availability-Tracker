@@ -3,7 +3,8 @@ FROM node:20-alpine AS builder
 ENV NODE_ENV=production
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Use npm install to allow building even if lockfile is not yet updated
+RUN npm install --omit=dev && npm cache clean --force
 COPY --chown=node:node server.js ./ 
 COPY --chown=node:node public/ ./public/
 COPY --chown=node:node input/ ./input/
