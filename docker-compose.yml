@@ -10,8 +10,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-       - "/var/jenkins_home/workspace/AvailabilityTracker/input:/app/input:rw"
-       - "/var/jenkins_home/workspace/AvailabilityTracker/output:/app/output:rw"
+       - "./input:/app/input:rw"
+       - "./output:/app/output:rw"
     depends_on:
       - redis
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - "/var/jenkins_home/workspace/AvailabilityTracker/redis_volume:/data"
+      - "./redis_volume:/data"
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
 
@@ -33,7 +33,7 @@ services:
       - app
       - redis
     volumes:
-      - "/var/jenkins_home/workspace/AvailabilityTracker/output:/app/output"
+      - "./output:/app/output"
     entrypoint: ["sh", "-c"]
     command: >
       "mkdir -p /app/output; \
