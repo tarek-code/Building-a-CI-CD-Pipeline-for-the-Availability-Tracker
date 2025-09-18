@@ -147,9 +147,15 @@ pipeline {
             steps {
                 script {
                     echo "Starting application with Docker Compose..."
-                    sh 'chmod -R 777 /var/jenkins_home/workspace/AvailabilityTracker/input'
-                    sh 'chmod -R 777 /var/jenkins_home/workspace/AvailabilityTracker/output'
-                    sh 'docker-compose up -d || echo "Docker Compose start failed - continuing with other steps..."'
+                    dir("${env.WORKSPACE}/AvailabilityTracker") {
+                        sh 'pwd && ls -la'
+                        // Sanity check mounts exist in the workspace Jenkins is using
+                        sh '[ -d input ] && ls -la input || echo "input/ missing"'
+                        sh '[ -d output ] && ls -la output || echo "output/ missing"'
+                        // Recreate stack to refresh mounts
+                        sh 'docker-compose down -v || true'
+                        sh 'docker-compose up -d'
+                    }
                 }
             }
         }
