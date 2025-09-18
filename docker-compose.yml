@@ -10,7 +10,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./public:/app/public:ro
       - ./input:/app/input:ro
       - ./output:/app/output
     depends_on:
