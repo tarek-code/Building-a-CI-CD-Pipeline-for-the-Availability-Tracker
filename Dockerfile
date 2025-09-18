@@ -14,4 +14,4 @@ COPY --from=builder /app /app
 ENV PORT=3000 NODE_ENV=production
 EXPOSE 3000
 # distroless node image has entrypoint=node; only pass script
-CMD ["server.js"]
+CMD ["node","server.js"]
