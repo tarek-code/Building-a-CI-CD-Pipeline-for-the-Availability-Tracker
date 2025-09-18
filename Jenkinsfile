@@ -151,9 +151,7 @@ pipeline {
                 sh '''
                     set -x
                     echo "WORKSPACE: $(pwd)"
-                    chown -R 1000:1000 /var/jenkins_home/workspace/AvailabilityTracker/input
-                    chmod -R 777 /var/jenkins_home/workspace/AvailabilityTracker/input
-                    chmod -R 777 /var/jenkins_home/workspace/AvailabilityTracker/output
+                    
                     echo "Listing workspace root:"
                     ls -la
                     
