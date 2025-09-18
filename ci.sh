@@ -86,6 +86,14 @@ echo "All required tools are installed."
 # Step 2: Code formatting and linting (idempotent)
 # ==============================
 
+# Ensure redis package is installed (required for tests after recent changes)
+if ! npm ls redis >/dev/null 2>&1; then
+  echo "redis package not found. Installing..."
+  npm install redis
+else
+  echo "redis package already installed."
+fi
+
 echo "Running code quality checks..."
 
 # Run format check (read-only, idempotent)
