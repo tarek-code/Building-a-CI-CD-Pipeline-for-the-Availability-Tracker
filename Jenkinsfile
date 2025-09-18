@@ -154,24 +154,8 @@ pipeline {
                     
                     echo "Listing workspace root:"
                     ls -la
-                    
-                    echo "Listing input directory:"
-                    [ -d input ] && ls -la input || echo "input/ missing"
-                    
-                    echo "Listing output directory:"
-                    [ -d output ] && ls -la output || echo "output/ missing"
-                    
-                    echo "Checking ownership and permissions:"
-                    stat input
-                    stat output
-                    
-                    # Fix permissions if needed
-                    chmod -R 777 input output
-                    echo "Permissions fixed."
-                    
-                    # Show mounts in Docker
-                    docker info | grep "Docker Root Dir"
-                    
+                    echo "cat docker-compose.yml"
+                    cat docker-compose.yml
                     # Compose down/up
                     COMPOSE_FILE=$(find . -maxdepth 2 -type f -name docker-compose.yml | head -n1)
                     if [ -z "$COMPOSE_FILE" ]; then
