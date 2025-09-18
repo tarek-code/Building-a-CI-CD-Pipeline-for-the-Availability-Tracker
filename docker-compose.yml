@@ -10,8 +10,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-       - "./input:/app/input:rw"
-       - "./output:/app/output:rw"
+      - "./input:/app/input:ro,z"
+      - "./output:/app/output:z"
     depends_on:
       - redis
     restart: unless-stopped
