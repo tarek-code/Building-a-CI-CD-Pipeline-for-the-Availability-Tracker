@@ -8,7 +8,6 @@ RUN npm install --omit=dev && npm cache clean --force
 COPY server.js ./ 
 COPY public/ ./public/
 COPY input/ ./input/
-COPY output/ ./output/
 # Runtime: node alpine (with sh)
 FROM node:20-alpine
 WORKDIR /app
