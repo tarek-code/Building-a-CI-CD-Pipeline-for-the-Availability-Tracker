@@ -14,6 +14,11 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/input", express.static(path.join(__dirname, "input")));
 app.use("/output", express.static(path.join(__dirname, "output")));
 
+// Ensure root serves the homepage explicitly
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // ============================
 // Functions for Unit Testing
 // ============================
