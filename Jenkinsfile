@@ -147,6 +147,8 @@ pipeline {
             steps {
                 script {
                     echo "Starting application with Docker Compose..."
+                     chmod -R 777 /var/jenkins_home/workspace/Availability_Tracker/input
+                     chmod -R 777 /var/jenkins_home/workspace/Availability_Tracker/output
                     sh 'docker-compose up -d || echo "Docker Compose start failed - continuing with other steps..."'
                 }
             }
