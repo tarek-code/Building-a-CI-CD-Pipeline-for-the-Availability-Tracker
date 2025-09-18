@@ -7,11 +7,10 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --chown=node:node server.js ./ 
 COPY --chown=node:node public/ ./public/
 
-# Runtime: distroless node (no shell, minimal)
-FROM gcr.io/distroless/nodejs20-debian12
+# Runtime: node alpine (with sh)
+FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app /app
 ENV PORT=3000 NODE_ENV=production
 EXPOSE 3000
-# distroless node image has entrypoint=node; only pass script
-CMD ["server.js"]
+CMD ["node", "server.js"]
