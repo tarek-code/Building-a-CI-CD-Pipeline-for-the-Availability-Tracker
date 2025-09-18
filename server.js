@@ -2,9 +2,21 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const bodyParser = require("body-parser");
+const { createClient } = require("redis");
 
 const app = express();
 const PORT = 3000;
+const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";
+
+// Redis client
+const redisClient = createClient({ url: REDIS_URL });
+redisClient.on("error", (err) => console.error("Redis Client Error", err));
+
+async function ensureRedisConnected() {
+  if (!redisClient.isOpen) {
+    await redisClient.connect();
+  }
+}
 
 // Middleware
 app.use(bodyParser.json());
@@ -17,6 +29,27 @@ app.use("/output", express.static(path.join(__dirname, "output")));
 // Ensure root serves the homepage explicitly
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Serve history from Redis for the frontend (fallback to file)
+app.get("/output/history.json", async (_req, res) => {
+  try {
+    await ensureRedisConnected();
+    const raw = await redisClient.get("history");
+    if (raw) {
+      res.status(200).type("application/json").send(raw);
+      return;
+    }
+    const fp = path.join(__dirname, "output", "history.json");
+    if (fs.existsSync(fp)) {
+      res.status(200).type("application/json").send(fs.readFileSync(fp, "utf8"));
+      return;
+    }
+    res.status(200).json({});
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({});
+  }
 });
 
 // ============================
@@ -49,10 +82,14 @@ function readHistoryFromFile(filePath) {
 // Routes
 // ============================
 
-app.post("/save-history", (req, res) => {
+app.post("/save-history", async (req, res) => {
   try {
+    // Save directly to Redis as the source of truth
+    await ensureRedisConnected();
+    await redisClient.set("history", JSON.stringify(req.body, null, 2));
+    // Best-effort write to file for compatibility/visibility
     const historyPath = path.join(__dirname, "output", "history.json");
-    saveHistoryToFile(historyPath, req.body);
+    try { saveHistoryToFile(historyPath, req.body); } catch {}
     res.status(200).send("Saved");
   } catch (err) {
     console.error(err);
@@ -62,9 +99,12 @@ app.post("/save-history", (req, res) => {
 
 // Start server only if running directly
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
+  (async () => {
+    try { await ensureRedisConnected(); } catch (e) { console.warn("Redis connect failed", e.message); }
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  })();
 }
 
 // ============================
