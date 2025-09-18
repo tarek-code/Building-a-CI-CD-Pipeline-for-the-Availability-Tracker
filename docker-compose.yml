@@ -24,8 +24,3 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     restart: unless-stopped
 
-  # history-sync service removed; app now writes directly to Redis
-
-volumes:
-  redis-data:
-

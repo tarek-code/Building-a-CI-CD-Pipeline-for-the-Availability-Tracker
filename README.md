@@ -5,8 +5,7 @@ This repository contains a small Express (Node.js) application used to track tea
 If you only need the TL;DR:
 - Run locally with Docker Compose: `docker compose up -d --build`
 - App: http://localhost:3000
-- Persisted history: `output/history.json`
-- Redis key: `history` (mirrored by a sync sidecar)
+- History is stored in Redis under key `history` (file write is best‑effort)
 
 ---
 
@@ -14,8 +13,7 @@ If you only need the TL;DR:
 
 - Purpose: Provide a simple UI for setting weekly availability for a list of team members.
 - Frontend: Static web app loaded from `public/` and seed data in `input/*.json`.
-- Backend: Express server (`server.js`) that serves content and persists changes to `output/history.json`.
-- Data persistence: Two‑way sync keeps `output/history.json` and Redis `history` key in sync.
+- Backend: Express server (`server.js`) that serves content and persists changes primarily in Redis (`history` key). A best‑effort file write to `output/history.json` is kept for local visibility.
 - CI/CD: Bash script (`ci.sh`) and a Jenkins pipeline (`Jenkinsfile`) to run code quality checks, tests, build the Docker image, and run the stack via Docker Compose.
 
 ---
@@ -27,9 +25,7 @@ Root
 - Dockerfile.jenkins: Custom Jenkins image (Node 20, Docker CLI & Compose, AWS CLI, Terraform, Ansible, npm tools) to run the pipeline inside Jenkins reliably.
 - docker-compose.yml: Defines the local stack:
   - `app` (the Express service),
-  - `redis` (for storing history),
-  - `history-sync` (small helper that mirrors history between file and Redis in both directions).
-  - Binds `./output:/app/output` so changes persist and are visible on host.
+  - `redis` (for storing history)
 - Jenkinsfile: Declarative pipeline. Stages:
   1) Checkout,
   2) Install Dependencies,
@@ -47,7 +43,7 @@ Server and tests
 - server.js: Express server.
   - Serves UI from `public/` (and seed data from `input/`).
   - Explicit `GET /` route serves `public/index.html`.
-  - `POST /save-history` writes `output/history.json` (pretty‑printed JSON).
+- `POST /save-history` writes history to Redis and best‑effort to `output/history.json` (pretty‑printed JSON).
 - server.unit.test.js: Unit tests for `saveHistoryToFile` and `readHistoryFromFile`.
 - server.integration.test.js: Integration tests for `GET /`, `POST /save-history`, and 404s.
 
@@ -75,22 +71,17 @@ Supporting config
 
 ```
 Browser  ⇄  Express (server.js)
-             ├─ GET /, serves public/index.html
-             ├─ GET /input/*.json (seed data)
-             ├─ GET /output/history.json (latest saved)
-             └─ POST /save-history → write output/history.json
+            ├─ GET /, serves public/index.html
+            ├─ GET /input/*.json (seed data)
+            ├─ GET /output/history.json (reads from Redis; falls back to file)
+            └─ POST /save-history → write to Redis (and best‑effort file)
 
 Redis (key: history)
-↑↓ (two‑way)
-History‑sync sidecar ↔ output/history.json
 ```
 
 - The UI loads names/weeks/status lists from `input/` and renders a table.
 - When you click Save, the UI consolidates changes and posts them to `/save-history`.
-- The server writes `output/history.json` on disk.
-- A tiny sidecar keeps that file and the Redis key `history` in sync both ways:
-  - At startup: if Redis has data, it seeds the file; otherwise the file seeds Redis.
-  - Then it watches for changes in either direction.
+- The server writes primarily to Redis; it also writes a best‑effort file `output/history.json` for convenience.
 
 ---
 
@@ -196,7 +187,7 @@ SELinux host
 - Set up the project (clone, `.gitignore`, dependencies)
 - CI script `ci.sh` runs: format/lint/tests → build → compose up
 - Dockerfile builds a small, reproducible app image
-- Compose runs app + Redis + history sync
+- Compose runs app + Redis
 - Jenkins pipeline mirrors CI script (optional)
 - (Optional) Terraform stub for infra simulation
 
