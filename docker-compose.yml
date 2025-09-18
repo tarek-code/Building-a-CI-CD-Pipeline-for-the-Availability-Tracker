@@ -10,7 +10,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - "/var/jenkins_home/workspace/Availability_Tracker/input:/app/input:ro"
+      - "/var/jenkins_home/workspace/Availability_Tracker/input:/app/:ro"
       - "/var/jenkins_home/workspace/Availability_Tracker/output:/app/output"
     depends_on:
       - redis
