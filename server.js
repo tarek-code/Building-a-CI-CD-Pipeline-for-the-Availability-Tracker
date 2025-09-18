@@ -89,7 +89,7 @@ app.post("/save-history", async (req, res) => {
     await redisClient.set("history", JSON.stringify(req.body, null, 2));
     // Best-effort write to file for compatibility/visibility
     const historyPath = path.join(__dirname, "output", "history.json");
-    try { saveHistoryToFile(historyPath, req.body); } catch {}
+    try { saveHistoryToFile(historyPath, req.body); } catch (err) {  /*intentionally ignored - Redis is source of truth */}
     res.status(200).send("Saved");
   } catch (err) {
     console.error(err);
