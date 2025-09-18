@@ -144,32 +144,49 @@ pipeline {
         }
         
         stage('Docker Compose Deploy') {
-            steps {
-                script {
-                    echo "Starting application with Docker Compose..."
-                    dir("${env.WORKSPACE}") {
-                        sh '''
-                            set -e
-                            echo "WORKSPACE: $(pwd)"
-                            # Locate docker-compose.yml within workspace (depth 2)
-                            COMPOSE_FILE=$(find . -maxdepth 2 -type f -name docker-compose.yml | head -n1)
-                            if [ -z "$COMPOSE_FILE" ]; then
-                              echo "docker-compose.yml not found in workspace" >&2
-                              exit 1
-                            fi
-                            COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
-                            echo "Using compose in: $COMPOSE_DIR"
-                            cd "$COMPOSE_DIR"
-                            pwd && ls -la
-                            [ -d input ] && ls -la input || echo "input/ missing"
-                            [ -d output ] && ls -la output || echo "output/ missing"
-                            docker-compose down -v || true
-                            docker-compose up -d
-                        '''
-                    }
-                }
+    steps {
+        script {
+            echo "Debugging Docker Compose mount before starting..."
+            dir("${env.WORKSPACE}") {
+                sh '''
+                    set -x
+                    echo "WORKSPACE: $(pwd)"
+                    
+                    echo "Listing workspace root:"
+                    ls -la
+                    
+                    echo "Listing input directory:"
+                    [ -d input ] && ls -la input || echo "input/ missing"
+                    
+                    echo "Listing output directory:"
+                    [ -d output ] && ls -la output || echo "output/ missing"
+                    
+                    echo "Checking ownership and permissions:"
+                    stat input
+                    stat output
+                    
+                    # Fix permissions if needed
+                    chmod -R 777 input output
+                    echo "Permissions fixed."
+                    
+                    # Show mounts in Docker
+                    docker info | grep "Docker Root Dir"
+                    
+                    # Compose down/up
+                    COMPOSE_FILE=$(find . -maxdepth 2 -type f -name docker-compose.yml | head -n1)
+                    if [ -z "$COMPOSE_FILE" ]; then
+                        echo "docker-compose.yml not found" >&2
+                        exit 1
+                    fi
+                    COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
+                    cd "$COMPOSE_DIR"
+                    docker-compose down -v || true
+                    docker-compose up -d
+                '''
             }
         }
+    }
+}
     }
     
     post {
