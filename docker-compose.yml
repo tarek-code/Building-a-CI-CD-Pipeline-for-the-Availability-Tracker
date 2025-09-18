@@ -10,7 +10,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - "./input:/app/input:ro,z"
       - "./output:/app/output:z"
     depends_on:
       - redis
