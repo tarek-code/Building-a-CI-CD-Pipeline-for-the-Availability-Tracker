@@ -5,10 +5,9 @@ services:
     container_name: availability-tracker
     environment:
       - NODE_ENV=production
-      - PORT=3000
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3000:3000"
+      - "3000:8080"
     depends_on:
       - redis
     restart: unless-stopped
