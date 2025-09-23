@@ -6,17 +6,21 @@ const { createClient } = require("redis");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-//const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379"; use this for local development
-const REDIS_URL = process.env.REDIS_URL || "redis://your-elasticache-endpoint.cache.amazonaws.com:6379"; // use this for AWS Elasticache
+// Use Redis only if REDIS_URL is explicitly provided
+const REDIS_URL = process.env.REDIS_URL || "";
 
-// Redis client
-const redisClient = createClient({ url: REDIS_URL });
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
+// Redis client (optional)
+const redisClient = REDIS_URL ? createClient({ url: REDIS_URL }) : null;
+if (redisClient) {
+  redisClient.on("error", (err) => console.error("Redis Client Error", err));
+}
 
 async function ensureRedisConnected() {
+  if (!redisClient) return false;
   if (!redisClient.isOpen) {
     await redisClient.connect();
   }
+  return true;
 }
 
 // Middleware
@@ -35,11 +39,12 @@ app.get("/", (_req, res) => {
 // Serve history from Redis for the frontend (fallback to file)
 app.get("/output/history.json", async (_req, res) => {
   try {
-    await ensureRedisConnected();
-    const raw = await redisClient.get("history");
-    if (raw) {
-      res.status(200).type("application/json").send(raw);
-      return;
+    if (await ensureRedisConnected()) {
+      const raw = await redisClient.get("history");
+      if (raw) {
+        res.status(200).type("application/json").send(raw);
+        return;
+      }
     }
     const fp = path.join(__dirname, "output", "history.json");
     if (fs.existsSync(fp)) {
@@ -85,13 +90,20 @@ function readHistoryFromFile(filePath) {
 
 app.post("/save-history", async (req, res) => {
   try {
-    // Save directly to Redis as the source of truth
-    await ensureRedisConnected();
-    await redisClient.set("history", JSON.stringify(req.body, null, 2));
-    // Best-effort write to file for compatibility/visibility
+    let savedToRedis = false;
+    // Save to Redis if configured
+    if (await ensureRedisConnected()) {
+      try {
+        await redisClient.set("history", JSON.stringify(req.body, null, 2));
+        savedToRedis = true;
+      } catch (e) {
+        console.warn("Redis set failed, will fallback to file", e.message);
+      }
+    }
+    // Always write to file for compatibility/visibility
     const historyPath = path.join(__dirname, "output", "history.json");
-    try { saveHistoryToFile(historyPath, req.body); } catch { /* intentionally ignored - Redis is source of truth */ }
-    res.status(200).send("Saved");
+    try { saveHistoryToFile(historyPath, req.body); } catch {}
+    res.status(200).send(savedToRedis ? "Saved (redis + file)" : "Saved (file)" );
   } catch (err) {
     console.error(err);
     res.status(500).send("Failed to save history.json");
@@ -100,12 +112,14 @@ app.post("/save-history", async (req, res) => {
 
 // Start server only if running directly
 if (require.main === module) {
-  (async () => {
-    try { await ensureRedisConnected(); } catch (e) { console.warn("Redis connect failed", e.message); }
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-    });
-  })();
+  // Start listening immediately to satisfy Cloud Run health checks
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+  // Optionally connect to Redis in the background
+  ensureRedisConnected().catch((e) => {
+    console.warn("Redis background connect failed", e.message);
+  });
 }
 
 // ============================
