@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Terraform Destroy') {
+            steps {
+                withCredentials([file(credentialsId: 'gcp-jenkins-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    sh """
+                      echo "Authenticating with GCP..."
+                      gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+                      gcloud config set project konecta-task-1-hands-on
+                      gcloud config set compute/zone us-central1-a
+                      
+                      cd terraform
+                      terraform init
+                      terraform destroy -auto-approve
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "Terraform destroy pipeline finished."
+        }
+        success {
+            echo "Infrastructure destroyed successfully!"
+        }
+        failure {
+            echo "Terraform destroy failed. Please check logs."
+        }
+    }
+}
