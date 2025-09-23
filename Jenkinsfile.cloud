@@ -172,7 +172,6 @@ pipeline {
                 echo "Pipeline completed!"
                 sh '''
                     echo "Cleaning up temporary files..."
-                    rm -f gcloud-key.json
                 '''
             }
         }
