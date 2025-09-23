@@ -150,9 +150,9 @@ pipeline {
 
         stage('Terraform Init & Apply') {
             steps {
-                withCredentials([file(credentialsId: 'gcp-jenkins-key', variable: 'GCLOUD_KEY')]) {
+                withCredentials([file(credentialsId: 'gcp-jenkins-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
                     sh """
-                      gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                      gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
                       gcloud config set project konecta-task-1-hands-on
                       gcloud config set compute/zone us-central1-a
                       cd terraform
