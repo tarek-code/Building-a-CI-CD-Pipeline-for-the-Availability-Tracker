@@ -102,7 +102,7 @@ app.post("/save-history", async (req, res) => {
     }
     // Always write to file for compatibility/visibility
     const historyPath = path.join(__dirname, "output", "history.json");
-    try { saveHistoryToFile(historyPath, req.body); } catch {}
+    try { saveHistoryToFile(historyPath, req.body); } catch (e) { /* ignore file write errors */ }
     res.status(200).send(savedToRedis ? "Saved (redis + file)" : "Saved (file)" );
   } catch (err) {
     console.error(err);

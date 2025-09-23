@@ -42,8 +42,7 @@ select {
   /* Adding rounded edges to dropdown */
   border: 1px solid #ccc;
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  appearance: none;
 }
 
 /* Status colors for dropdown items */
