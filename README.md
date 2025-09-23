@@ -91,3 +91,38 @@ docker-compose up -d
 - `PORT` - Server port (default: 8080)
 - `REDIS_URL` - Redis connection string (e.g., `redis://host:port`)
 - `NODE_ENV` - Environment (production/development)
+
+## What Happened When Starting This Project (Timeline & Fixes)
+
+- Cloud Run failed to become ready (PORT 8080):
+  - Cause: Server attempted Redis connect during startup and bound only after success.
+  - Fix: `server.js` now listens immediately on `0.0.0.0:${PORT}` and connects to Redis in the background; added `/healthz`.
+
+- Container failed health checks due to PORT mismatch:
+  - Cause: Cloud Run expects 8080; clarified app PORT logic and Dockerfile exposes 8080.
+  - Fix: Ensure no custom PORT in Cloud Run; compose maps host 3000 → container 8080 for local use.
+
+- Terraform used `REDIS_HOST`/`REDIS_PORT` (unused by app):
+  - Fix: Switched to `REDIS_URL=redis://<memorystore-ip>:6379` in Cloud Run env.
+
+- Cloud Run couldn’t reach Redis (private IP):
+  - Cause: No Serverless VPC Access connector.
+  - Fix: Added `google_vpc_access_connector` and Cloud Run annotations; ensured same region/network.
+
+- VPC connector API/quotas/states:
+  - Error: Connector required min/max instances; set `min_instances=2`, `max_instances=2`.
+  - Error: Existing broken connector → 409/bad state.
+  - Fix: Delete broken connector, recreate with non-overlapping `/28` range (e.g., `10.9.0.0/28`).
+
+- IAM/API permissions during Terraform:
+  - Error: `run.services.setIamPolicy` denied and Cloud Resource Manager API disabled.
+  - Fix: Enable APIs (`run`, `vpcaccess`, `redis`, `cloudresourcemanager`) and grant roles to Jenkins SA (`run.admin`, `iam.serviceAccountUser`, `vpcaccess.user`).
+
+- Local Docker Compose networking:
+  - Updated compose to map host `3000:8080`; removed PORT env so app defaults to 8080.
+  - Use `REDIS_URL=redis://redis:6379` to reach the Redis service.
+
+- Lint/test issues:
+  - ESLint `no-empty` fixed; CSS vendor prefixes simplified; tests passing (unit + integration).
+
+With these fixes, local and cloud deployments run reliably, and data persists in Redis when `REDIS_URL` is configured.
