@@ -21,16 +21,6 @@ resource "google_redis_instance" "my_redis" {
   region         = "us-central1"
 }
 
-# Serverless VPC Access connector for Cloud Run to reach Memorystore (default VPC)
-resource "google_vpc_access_connector" "run_connector" {
-  name          = "run-to-redis"
-  region        = "us-central1"
-  network       = "default"
-  ip_cidr_range = "10.8.0.0/28"
-  min_instances = 2
-  max_instances = 3
-}
-
 # Cloud Run Service
 resource "google_cloud_run_service" "my_service" {
   name     = "teamavail-cloudrun-service"
@@ -39,7 +29,7 @@ resource "google_cloud_run_service" "my_service" {
   template {
     metadata {
       annotations = {
-        "run.googleapis.com/vpc-access-connector" = google_vpc_access_connector.run_connector.id
+        "run.googleapis.com/vpc-access-connector" = "projects/konecta-task-1-hands-on/locations/us-central1/connectors/run-to-redis"
         "run.googleapis.com/vpc-access-egress"    = "all-traffic"
       }
     }
