@@ -6,8 +6,52 @@ terraform {
     }
   }
 }
+
 provider "google" {
-  project = "konecta task 1 hands on"
+  project = "konecta-task-1-hands-on"
   region  = "us-central1"
   zone    = "us-central1-a"
+}
+
+# Redis
+resource "google_redis_instance" "my_redis" {
+  name           = "my-redis"
+  tier           = "BASIC"
+  memory_size_gb = 1
+  region         = "us-central1"
+}
+
+# Cloud Run Service
+resource "google_cloud_run_service" "my_service" {
+  name     = "my-cloudrun-service"
+  location = "us-central1"
+
+  template {
+    spec {
+      containers {
+        image = "gcr.io/konecta-task-1-hands-on/my-app:latest"
+        env {
+          name  = "REDIS_HOST"
+          value = google_redis_instance.my_redis.host
+        }
+        env {
+          name  = "REDIS_PORT"
+          value = google_redis_instance.my_redis.port
+        }
+      }
+    }
+  }
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+}
+
+# Allow unauthenticated access (optional)
+resource "google_cloud_run_service_iam_member" "noauth" {
+  service  = google_cloud_run_service.my_service.name
+  location = google_cloud_run_service.my_service.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }
