@@ -112,9 +112,11 @@ app.post("/save-history", async (req, res) => {
 
 // Start server only if running directly
 if (require.main === module) {
+  // Health endpoint for Cloud Run
+  app.get("/healthz", (_req, res) => res.status(200).send("ok"));
   // Start listening immediately to satisfy Cloud Run health checks
-  app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running at http://0.0.0.0:${PORT}`);
   });
   // Optionally connect to Redis in the background
   ensureRedisConnected().catch((e) => {
