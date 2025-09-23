@@ -29,7 +29,7 @@ resource "google_cloud_run_service" "my_service" {
   template {
     spec {
       containers {
-        image = "gcr.io/tarekadel/teamavail:latest"
+        image = "docker.io/tarekadel/teamavail:latest"
         env {
           name  = "REDIS_HOST"
           value = google_redis_instance.my_redis.host
