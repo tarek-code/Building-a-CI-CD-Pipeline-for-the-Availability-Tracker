@@ -23,13 +23,13 @@ resource "google_redis_instance" "my_redis" {
 
 # Cloud Run Service
 resource "google_cloud_run_service" "my_service" {
-  name     = "my-cloudrun-service"
+  name     = "teamavail-cloudrun-service"
   location = "us-central1"
 
   template {
     spec {
       containers {
-        image = "gcr.io/konecta-task-1-hands-on/my-app:latest"
+        image = "gcr.io/tarekadel/teamavail:latest"
         env {
           name  = "REDIS_HOST"
           value = google_redis_instance.my_redis.host

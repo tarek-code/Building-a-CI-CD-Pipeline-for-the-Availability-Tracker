@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const { createClient } = require("redis");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 //const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379"; use this for local development
 const REDIS_URL = process.env.REDIS_URL || "redis://your-elasticache-endpoint.cache.amazonaws.com:6379"; // use this for AWS Elasticache
 
