@@ -27,6 +27,8 @@ resource "google_vpc_access_connector" "run_connector" {
   region        = "us-central1"
   network       = "default"
   ip_cidr_range = "10.8.0.0/28"
+  min_instances = 1
+  max_instances = 1
 }
 
 # Cloud Run Service
