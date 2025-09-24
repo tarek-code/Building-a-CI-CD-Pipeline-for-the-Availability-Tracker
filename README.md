@@ -110,10 +110,11 @@ docker-compose up -d
 ## What Happened When Starting This Project (Timeline & Fixes)
 
 ### Local Environment Setup (CentOS VM on VMware Workstation)
+
 - First, I provisioned a VM running CentOS to host the project locally.
 - Cloned the repository and ensured a proper `.gitignore` existed.
 
-![1758737433642](image/README/1758737433642.png)
+![1758737943761](image/README/1758737943761.png)
 
 - Created a `.gitignore` (if missing):
 
@@ -124,27 +125,34 @@ docker-compose up -d
 ![1758734509187](image/README/1758734509187.png)
 
 - Upgraded Node.js/npm:
+
 ```bash
 sudo yum remove -y nodejs npm
 curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
 sudo yum install -y nodejs
 npm --version && node --version
 ```
+
 - Re-ran installation and started the app successfully:
 
 ![1758734597883](image/README/1758734597883.png)
 ![1758734621522](image/README/1758734621522.png)
 
 ### CI Script (ci.sh)
+
 - Goal: Add formatting, linting, and tests to a single script.
 - Formatter: Prettier (works for JS/HTML/CSS)
+
 ```bash
 npm install --save-dev prettier
 ```
+
 ![1758734682796](image/README/1758734682796.png)
+
 - Added Prettier config:
 ![1758734707444](image/README/1758734707444.png)
 - package.json scripts:
+
 ```json
 {
   "scripts": {
@@ -153,26 +161,35 @@ npm install --save-dev prettier
   }
 }
 ```
+
 ![1758734720528](image/README/1758734720528.png)
+
 - Usage:
+
 ```bash
 npm run format:check
 npm run format
 npx prettier --write public/script.js
 ```
+
 ![1758734734040](image/README/1758734734040.png)
 
 ### Linting
+
 - Linters: ESLint (JS), Stylelint (CSS), HTMLHint (HTML)
+
 ```bash
 npm install --save-dev eslint stylelint stylelint-config-standard htmlhint
 npx eslint --init
 ```
+
 ![1758734746098](image/README/1758734746098.png)
 ![1758734750748](image/README/1758734750748.png)
+
 - Added config files:
 ![1758734763378](image/README/1758734763378.png)
 - package.json scripts:
+
 ```json
 {
   "scripts": {
@@ -185,11 +202,15 @@ npx eslint --init
 ```
 
 ### Unit & Integration Tests
+
 - Test tools: Jest + Supertest
+
 ```bash
 npm install --save-dev jest supertest
 ```
+
 - package.json scripts:
+
 ```json
 {
   "scripts": {
@@ -198,21 +219,27 @@ npm install --save-dev jest supertest
   }
 }
 ```
+
 - A background process was binding to port 3000. Identified and disabled it:
+
 ```bash
 ps -fp <PID>
 systemctl list-units | grep my_node_app
 sudo systemctl status my_node_app
 sudo systemctl stop my_node_app
 ```
+
 - Ensured `server.js` aligns with tests; then ran:
+
 ```bash
 npm run test:unit
 npm run test:integration
 ```
+
 ![1758735267888](image/README/1758735267888.png)
 
 - ESLint errors for Jest globals (describe/test/expect): added a Jest section to ESLint config:
+
 ```json
 {
   "files": ["**/*.test.js", "**/*.spec.js"],
@@ -226,9 +253,11 @@ npm run test:integration
 ```
 
 ### Docker and Jenkins
+
 - Built Docker image and started via Compose.
 - Created a custom Jenkins image to include all pipeline prerequisites.
 - Ran Jenkins:
+
 ```bash
 docker run -d \
   -p 9090:8080 -p 50000:50000 \
@@ -238,7 +267,9 @@ docker run -d \
 ```
 
 #### Disk Space Issue (Resolved)
+
 - Docker reported insufficient space. Extended the VM disk and resized the filesystem:
+
 ```text
 [root@localhost ~]# sudo fdisk /dev/sda
 
@@ -364,6 +395,7 @@ Filesystem           Size  Used Avail Use% Mounted on
 ```
 
 - Relaunched Jenkins successfully:
+
 ```bash
 docker run -d -p 9090:8080 -p 50000:50000 \
   -v jenkins_home:/var/jenkins_home \
@@ -372,10 +404,13 @@ docker run -d -p 9090:8080 -p 50000:50000 \
 ```
 
 #### GitHub Webhook (Local env via ngrok)
+
 - Used ngrok to expose Jenkins locally for GitHub webhooks:
+
 ```bash
 ngrok http 9090
 ```
+
 ![1758735780021](image/README/1758735780021.png)
 ![1758735815741](image/README/1758735815741.png)
 ![1758735828605](image/README/1758735828605.png)
@@ -385,6 +420,7 @@ ngrok http 9090
 ![1758735924041](image/README/1758735924041.png)
 
 ### Cloud Deployment (GCP via Terraform)
+
 - Wrote Terraform to provision:
   - Serverless VPC Access connector (to reach Memorystore from Cloud Run)
   - Memorystore (Redis) instance for persistence
@@ -402,6 +438,7 @@ ngrok http 9090
 ![1758736666603](image/README/1758736666603.png)
 
 ### Key Issues and Resolutions (Recap)
+
 - Cloud Run failed to become ready (PORT 8080):
   - Cause: Server attempted Redis connect during startup and bound only after success.
   - Fix: `server.js` now listens immediately on `0.0.0.0:${PORT}` and connects to Redis in the background; added `/healthz`.
